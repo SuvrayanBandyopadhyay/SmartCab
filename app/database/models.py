@@ -193,7 +193,15 @@ class ShiftChangeRequest(Base):
             ["slots.company_id", "slots.id"]
         ),
         CheckConstraint(
-            "status IN ('PENDING', 'APPROVAL_REQUIRED', "
-            "'APPROVED', 'REJECTED', 'APPLIED', 'FAILED')"
+            "status IN ("
+            "'PENDING', "
+            "'APPROVAL_REQUIRED', "
+            "'APPROVED', "
+            "'REJECTED', "
+            "'APPLIED', "
+            "'FAILED', "
+            "'WAITLISTED', "
+            "'SUPERSEDED'"
+            ")"
         ),
     )

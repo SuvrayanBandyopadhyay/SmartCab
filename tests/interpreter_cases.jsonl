@@ -1,13 +1,22 @@
-
-{"id":"TC01","input":"CHECK COMPANY","expected":{"company":"X Technologies"},"actual":null,"pass":null,"notes":"Checks the employee's company."}
-{"id":"TC02","input":"CHECK ROSTER","expected":{"count":1,"first_time":"18:00:00"},"actual":null,"pass":null,"notes":"Checks the employee's existing booking for today."}
-{"id":"TC03","input":"CHECK POLICY","expected":{"version":1},"actual":null,"pass":null,"notes":"Checks the company's policy data."}
-{"id":"TC04","input":"CHECK CABS","expected":{"count":1,"first_cab":"X-101","first_slot_count":4},"actual":null,"pass":null,"notes":"Checks the company's active cabs and their slots."}
-{"id":"TC05","input":"CHECK REQUESTS","expected":{"count":0},"actual":null,"pass":null,"notes":"Checks pending requests before creating new ones."}
-{"id":"TC06","input":"CHECK TIME 18:00 2","expected":{"count":3},"actual":null,"pass":null,"notes":"Checks available slots from 18:00 through 20:00, inclusive."}
-{"id":"TC07","input":"REQUEST TIME 19:30","expected":{"status":"FAILED"},"actual":null,"pass":null,"notes":"No slot exists at exactly 19:30."}
-{"id":"TC08","input":"REQUEST TIME 20:00","expected":{"status":"PENDING","requested_time":"20:00:00"},"actual":null,"pass":null,"notes":"Creates a request for the exact 20:00 slot."}
-{"id":"TC09","input":"REQUEST TIME 19:10 NEAREST","expected":{"status":"PENDING","requested_time":"19:00:00"},"actual":null,"pass":null,"notes":"Selects the nearest available slot to 19:10."}
-
-{"id":"TC10","input":"REQUEST SLOT 4","expected":{"status":"PENDING","requested_slot_id":4,"requested_time":"21:00:00"},"actual":null,"pass":null,"notes":"Requests the specific 21:00 slot by ID."}
-{"id":"TC11","input":"REQUEST SLOT 999","expected":{"status":"FAILED"},"actual":null,"pass":null,"notes":"Rejects a slot ID that does not exist for the employee's company."}
+{"id":"TC01","input":"CHECK COMPANY","expected":{"company":"X Technologies"},"actual":null,"pass":null,"notes":"Verifies Company X identity."}
+{"id":"TC02","input":"CHECK ROSTER","expected":{"count":1,"first_time":"18:00:00"},"actual":null,"pass":null,"notes":"Employee starts in Slot 1 at 18:00."}
+{"id":"TC03","input":"CHECK POLICY","expected":{"version":1},"actual":null,"pass":null,"notes":"Verifies Company X policy version."}
+{"id":"TC04","input":"CHECK CABS","expected":{"count":1,"first_cab":"X-101","first_slot_count":4},"actual":null,"pass":null,"notes":"Verifies one active cab and four slots."}
+{"id":"TC05","input":"CHECK REQUESTS","expected":{"count":0},"actual":null,"pass":null,"notes":"No requests should exist after the test runner clears this employee's requests."}
+{"id":"TC06","input":"CHECK TIME 18:00 2","expected":{"count":1,"first_time":"19:00:00"},"actual":null,"pass":null,"notes":"Checks available slots within a 2-hour margin from 18:00."}
+{"id":"TC07","input":"REQUEST TIME 19:30","expected":{"status":"FAILED"},"actual":null,"pass":null,"notes":"No exact 19:30 slot exists."}
+{"id":"TC08","input":"REQUEST TIME 20:00","expected":{"status":"PENDING","requested_time":"20:00:00"},"actual":null,"pass":null,"notes":"Requests the full 20:00 slot. A full slot should still accept a request for evaluation and possible waitlisting."}
+{"id":"TC09","input":"REQUEST TIME 19:10 NEAREST","expected":{"status":"PENDING","requested_time":"19:00:00"},"actual":null,"pass":null,"notes":"Selects the nearest slot to 19:10."}
+{"id":"TC10","input":"REQUEST SLOT 4","expected":{"status":"PENDING","requested_slot_id":4,"requested_time":"21:00:00"},"actual":null,"pass":null,"notes":"Requests the 21:00 slot directly."}
+{"id":"TC11","input":"REQUEST SLOT 999","expected":{"status":"FAILED"},"actual":null,"pass":null,"notes":"Rejects a nonexistent slot."}
+{"id":"TC12","input":"REQUEST SLOT 1","expected":{"status":"FAILED"},"actual":null,"pass":null,"notes":"Rejects a request for the employee's existing slot."}
+{"id":"TC13","input":"REQUEST TIME 21:00","expected":{"status":"PENDING","requested_time":"21:00:00"},"actual":null,"pass":null,"notes":"Requests an exact available time."}
+{"id":"TC14","input":"REQUEST TIME 20:30 NEAREST","expected":{"status":"PENDING","requested_time":"20:00:00"},"actual":null,"pass":null,"notes":"Tests nearest-slot tie-breaking: 20:00 and 21:00 are equally distant, so the earlier slot is selected."}
+{"id":"TC15","input":"REQUEST SLOT 3","expected":{"status":"PENDING","requested_slot_id":3,"requested_time":"20:00:00"},"actual":null,"pass":null,"notes":"Requests a specific full slot by ID."}
+{"id":"TC16","input":"REQUEST SLOT 2","expected":{"status":"PENDING","requested_slot_id":2,"requested_time":"19:00:00"},"actual":null,"pass":null,"notes":"Requests the available 19:00 slot directly."}
+{"id":"TC17","input":"CHECK REQUESTS","expected":{"count":7},"actual":null,"pass":null,"notes":"Verifies that all seven successfully created requests are returned, including requests for full slots."}
+{"id":"TC18","input":"CHECK ROSTER","expected":{"count":1,"first_time":"18:00:00"},"actual":null,"pass":null,"notes":"Request creation must not directly change the employee's roster."}
+{"id":"TC19","input":"CHECK COMPANY","expected":{"company":"X Technologies"},"actual":null,"pass":null,"notes":"Rechecks company isolation and identity."}
+{"id":"TC20","input":"CHECK POLICY","expected":{"version":1},"actual":null,"pass":null,"notes":"Rechecks policy retrieval after request creation."}
+{"id":"TC21","input":"CHECK CABS","expected":{"count":1,"first_cab":"X-101","first_slot_count":4},"actual":null,"pass":null,"notes":"Rechecks cab and slot retrieval."}
+{"id":"TC22","input":"CHECK REQUESTS","expected":{"count":7},"actual":null,"pass":null,"notes":"Verifies request history remains consistent."}

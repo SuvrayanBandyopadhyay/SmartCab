@@ -230,11 +230,8 @@ def execute_command(command_data, employee, db):
                 .filter(
                     ShiftChangeRequest.company_id == company_id,
                     ShiftChangeRequest.employee_id == employee.id,
-                    ShiftChangeRequest.status.in_(
-                        ["PENDING", "APPROVAL_REQUIRED"]
-                    ),
                 )
-                .order_by(ShiftChangeRequest.created_at)
+                .order_by(ShiftChangeRequest.created_at.desc())
                 .all()
             )
 
@@ -278,6 +275,7 @@ def execute_command(command_data, employee, db):
                 )
             ]
 
+    
     if command_data["operation"] == "REQUEST":
 
         if command_data["target"] == "SLOT":
@@ -315,48 +313,42 @@ def execute_command(command_data, employee, db):
                     "message": "You are already booked in this slot",
                 }
 
-            already_booked = (
-                db.query(RosterEntry)
+            #Validate requested slot without checking its occupancy
+
+            selected_slot = (
+                db.query(Slot)
                 .filter(
-                    RosterEntry.company_id == company_id,
-                    RosterEntry.employee_id == employee.id,
-                    RosterEntry.slot_id == requested_slot_id,
+                    Slot.id == requested_slot_id,
+                    Slot.company_id == company_id,
+                    Slot.service_date == requested_date,
+                    Slot.status == "OPEN",
                 )
                 .first()
             )
 
-            if already_booked:
+            if selected_slot is None:
                 return {
                     "status": "FAILED",
-                    "message": "You are already booked in this slot",
+                    "message": "Requested slot does not exist or is unavailable",
                 }
 
-            available_slots = get_available_slots(
-                db,
-                company_id,
-                requested_date,
-                exclude_slot_id=current_slot.id,
+            selected_cab = (
+                db.query(Cab)
+                .filter(
+                    Cab.id == selected_slot.cab_id,
+                    Cab.company_id == company_id,
+                    Cab.active == True,
+                )
+                .first()
             )
 
-            selected = next(
-                (
-                    item for item in available_slots
-                    if item["slot"].id == requested_slot_id
-                ),
-                None,
-            )
-
-            if selected is None:
+            if selected_cab is None:
                 return {
                     "status": "FAILED",
-                    "message": (
-                        "Requested slot does not exist, is unavailable, "
-                        "or has no available seats"
-                    ),
+                    "message": "Requested cab is unavailable",
                 }
 
-            selected_slot = selected["slot"]
-            selected_cab = selected["cab"]
+            #Create request even if the slot is full
 
             request = ShiftChangeRequest(
                 company_id=company_id,
@@ -417,45 +409,96 @@ def execute_command(command_data, employee, db):
 
         roster_entry, current_slot = roster
 
-        available_slots = get_available_slots(
-            db,
-            company_id,
-            requested_date,
-            requested_time,
-            exclude_slot_id=current_slot.id,
-        )
-
+        
         if command_data["nearest"]:
 
-            if not available_slots:
+            #Find all valid slots, including full slots
+
+            candidate_slots = (
+                db.query(Slot, Cab)
+                .join(
+                    Cab,
+                    (Slot.cab_id == Cab.id)
+                    & (Slot.company_id == Cab.company_id),
+                )
+                .filter(
+                    Slot.company_id == company_id,
+                    Slot.service_date == requested_date,
+                    Slot.id != current_slot.id,
+                    Slot.status == "OPEN",
+                    Cab.active == True,
+                )
+                .all()
+            )
+
+            if not candidate_slots:
                 return {
                     "status": "FAILED",
-                    "message": "No available slots found",
+                    "message": "No valid slots found",
                 }
 
-            selected = available_slots[0]
+            #Select the chronologically nearest slot
+
+            selected_slot, selected_cab = min(
+                candidate_slots,
+                key=lambda item: (
+                    abs(
+                        (
+                            datetime.combine(
+                                requested_date,
+                                item[0].scheduled_time,
+                            )
+                            -
+                            datetime.combine(
+                                requested_date,
+                                requested_time,
+                            )
+                        ).total_seconds()
+                    ),
+                    item[0].scheduled_time,
+                    item[0].id,
+                ),
+            )
+
 
         else:
 
-            selected = next(
-                (
-                    item for item in available_slots
-                    if item["slot"].scheduled_time == requested_time
-                ),
-                None,
+            #Exact time requests can target full slots
+
+            selected_slot = (
+                db.query(Slot)
+                .filter(
+                    Slot.company_id == company_id,
+                    Slot.service_date == requested_date,
+                    Slot.scheduled_time == requested_time,
+                    Slot.status == "OPEN",
+                )
+                .first()
             )
 
-            if selected is None:
+            if selected_slot is None:
                 return {
                     "status": "FAILED",
-                    "message": (
-                        "No available slot at the requested time. "
-                        "Try NEAREST."
-                    ),
+                    "message": "No slot exists at the requested time.",
                 }
 
-        selected_slot = selected["slot"]
-        selected_cab = selected["cab"]
+            selected_cab = (
+                db.query(Cab)
+                .filter(
+                    Cab.id == selected_slot.cab_id,
+                    Cab.company_id == company_id,
+                    Cab.active == True,
+                )
+                .first()
+            )
+
+            if selected_cab is None:
+                return {
+                    "status": "FAILED",
+                    "message": "Requested cab is unavailable",
+                }
+
+        #Create the shift change request
 
         request = ShiftChangeRequest(
             company_id=company_id,
@@ -481,5 +524,6 @@ def execute_command(command_data, employee, db):
             "requested_time": str(selected_slot.scheduled_time),
             "message": "Request created successfully. Awaiting policy evaluation.",
         }
+
 
     return {"error": "Invalid CabLang operation"}

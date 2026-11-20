@@ -1,3 +1,4 @@
+
 services:
   db:
     image: postgres:17
@@ -24,6 +25,17 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
+
+  evaluator:
+    build: .
+    command: python -m app.evaluator.evaluator
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:
