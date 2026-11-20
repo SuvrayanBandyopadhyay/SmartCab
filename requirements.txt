@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg[binary]
+pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+pwdlib[argon2]
+pytest
+httpx
+google-genai
+langgraph
+langgraph-checkpoint-postgres
+psycopg[binary,pool]
+email-validator
+langchain-google-genai
